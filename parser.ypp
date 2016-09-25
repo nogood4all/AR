@@ -11,7 +11,8 @@ using namespace std;
 
 int yylex();
 
-Formula * parsed_formula;
+Formula * parsed_formula = 0;
+Term* parsed_term = 0;
 
 %}
 
@@ -43,7 +44,8 @@ Formula * parsed_formula;
 
 %%
 
-start : formula { parsed_formula = $1; return 0; } ;
+start : formula { parsed_formula = $1; return 0; } 
+  | term        { parsed_term = $1; return 0; }
 
 formula : '{' l_equality '}' IZVODI equality { $$ = new Formula($2, $5); } ;
 

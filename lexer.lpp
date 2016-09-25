@@ -6,7 +6,7 @@
 #include "parser.hpp"
 
 extern Formula * parsed_formula;
-
+extern Term * parsed_term;
 %}
 
 %%
@@ -32,4 +32,13 @@ Formula * parseFormula(const char *str_input)
   yylex_destroy(); /* to avoid leakage */
 
   return parsed_formula;
+}
+
+Term * parseTerm(const char *str_input)
+{
+  yy_scan_string(str_input);
+  yyparse();
+  yylex_destroy(); /* to avoid leakage */
+
+  return parsed_term;
 }

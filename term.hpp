@@ -4,12 +4,13 @@
 
 #include <iostream>
 #include <vector>
+#include <iterator>
 
 class Term 
 { 
 public:
   Term() {}
-  enum Type {T_VAR, T_FN};
+  enum Type {T_VAR = 0, T_FN = 1};
   virtual Type type(void) const = 0 ;
   virtual bool isEqual(Term const * t) const = 0 ;
 
@@ -41,6 +42,7 @@ public:
 
   const std::string & name(void) const;
   Fn & name(const std::string & name); 
+  std::vector<Term*> args(void);
 
   friend std::ostream & operator << (std::ostream & o, Term * t);
 
@@ -60,12 +62,16 @@ struct Equality{
   Equality(Term *, Term *);
   Term * t1;
   Term * t2;
+
+  bool isEqual(Equality* eq) const;
 };
 
 struct Formula{
   Formula(std::vector<Equality*> * eqL, Equality * eq);
   std::vector<Equality*> * eqList;
   Equality * toProve;
+
+  bool findEquality(Equality* eq) const;
 };
 
 
