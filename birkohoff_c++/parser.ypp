@@ -1,0 +1,57 @@
+
+%{
+#include <FlexLexer.h>
+#include <stdio.h>
+#include <vector>
+#include <algorithm>
+#include "term.hpp"
+#define yyerror printf
+
+using namespace std;
+
+int yylex();
+
+Term * parsed_formula;
+
+%}
+
+%token<value> CONST;
+%token<str_attr> ID;
+%token<str_attr> IZVODI;
+%token EOL;
+
+%type<t> term
+%type<lista_termova> l_term
+%type<lista_termova> ll_term
+
+
+%union{
+  std::string * str_attr;
+  int value;
+  Term * t;
+  std::vector<Term*> * lista_termova;
+}
+
+%%
+
+start : term { parsed_formula=$1; return 0; } ;
+
+term : ID {$$ = new Var(*$1); }
+     | ID '(' l_term  ')'  { $$ = new Fn(*$1, *$3); $3->clear();tdelete $3; }
+     | CONST {$$ = makeConst($1); }
+     ;
+
+l_term : term ll_term {$2->push_back($1);
+                           std::reverse(std::begin(*$2), std::end(*$2));
+                           $$ = $2; }
+       ; 
+
+ll_term : ',' term ll_term  { $3->push_back($2); $$ = $3;  }
+        |  { $$ = new std::vector<Term*>; }
+        ;
+
+%%
+
+
+
+
