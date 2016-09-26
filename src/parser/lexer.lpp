@@ -2,7 +2,7 @@
 
 %{
 #include <cstdlib>
-#include "term.hpp"
+#include "../solver/term.hpp"
 #include "parser.hpp"
 
 extern Formula * parsed_formula;

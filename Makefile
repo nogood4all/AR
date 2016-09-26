@@ -1,35 +1,44 @@
+CC = g++
+CPP_FLAGS = -std=c++11 -Wall
+FLEX = flex
+YACC = bison
 
-CFlAGS = -std=c++11 -Wall
-CC = g++ $(CFlAGS)
+
+EXECUTABLE = BirkhoffInteractiveSolver
+
+SOLVERDIR = src/solver
+PARSERDIR = src/parser
+OBJDIR = obj
+BUILDDIR = bin
+
+SOURCES_PARSER = src/parser/parser.cpp 	src/parser/lexer.cpp
+SOURCES_SOLVER = $(wildcard src/solver/*.cpp)
+
+OBJECTS_SOLVER = $(patsubst $(SOLVERDIR)/%.cpp, $(OBJDIR)/%.o, $(SOURCES_SOLVER))
+OBJECTS_PARSER = $(patsubst $(PARSERDIR)/%.cpp, $(OBJDIR)/%.o, $(SOURCES_PARSER))
 
 
+.PHONY: all clean
 
-bi.out: bi.o term.o parser.o lexer.o 
-	$(CC) -o $@ $^
+all: parser $(BUILDDIR)/$(EXECUTABLE)
 
-bi.o: bi.cpp term.hpp term.cpp
-	$(CC) -c -o $@ $<
+$(BUILDDIR)/$(EXECUTABLE): $(OBJECTS_PARSER) $(OBJECTS_SOLVER)
+	$(CC) $(CPP_FLAGS) -o $@ $^
 
-term.o: term.cpp term.hpp
-	$(CC) -c -o $@ $<
+$(OBJECTS_SOLVER): $(OBJDIR)/%.o : $(SOLVERDIR)/%.cpp
+	$(CC) $(CPP_FLAGS) -c -o $@ $<
 
-parser.o: parser.cpp term.hpp
-	$(CC) -c -o $@ $<
+$(OBJECTS_PARSER): $(OBJDIR)/%.o : $(PARSERDIR)/%.cpp
+	$(CC) $(CPP_FLAGS) -Wno-unused-function -c -o $@ $<
 
-lexer.o: lexer.cpp parser.cpp
-	$(CC) -Wno-unused-function -c -o $@ $< #zali se za neku unput f-ju
+parser: $(PARSERDIR)/parser.cpp $(PARSERDIR)/lexer.cpp
 
-parser.cpp: parser.ypp
-	bison -d -o $@ $<
+$(PARSERDIR)/parser.cpp: $(PARSERDIR)/parser.ypp
+	$(YACC) -d -o $@ $<
 
-lexer.cpp: lexer.lpp
-	flex -o $@ $<
-
+$(PARSERDIR)/lexer.cpp: $(PARSERDIR)/lexer.lpp
+	$(FLEX) -o $@ $<
 
 clean:
-	rm -f *.o
-	rm -f *~
-	rm -f parser.cpp
-	rm -f lexer.cpp
-	rm -f parser.hpp
-	rm -f main
+	rm -f $(BUILDDIR)/* $(OBJDIR)/* $(SOLVERDIR)/*~ $(PARSERDIR)/lexer.cpp $(PARSERDIR)/parser.cpp $(PARSERDIR)/parser.hpp
+	echo $(OBJECTS_PARSER)

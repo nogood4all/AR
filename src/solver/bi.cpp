@@ -6,8 +6,8 @@
 using namespace std;
 
 void instantiate_term(Term*, Term*, Term*);
-Formula * parseFormula(const char *str_input);
-Term * parseTerm(const char *str_input);
+extern Formula * parseFormula(const char *str_input);
+extern Term * parseTerm(const char *str_input);
 
 string help_menu = ":help\t-\tthis menu\n:q\t-\texit program\n";
 
@@ -33,13 +33,13 @@ int main(){
 				//cout << pravilo << " " << jednakost << endl;
   			Term* arg = parseTerm(argTerm.c_str());
   			Equality* eq = desna_strana[jednakost-1];
-  			
+
   			if (!arg)
   				exit(EXIT_FAILURE);
 
   			Equality* eq1 = new Equality(eq->t1, arg);
   			Equality* eq2 = new Equality(arg, eq->t2);
-  			
+
   			desna_strana.erase(desna_strana.begin()+(jednakost-1));
   			desna_strana.push_back(eq1);
   			desna_strana.push_back(eq2);
@@ -96,13 +96,13 @@ int main(){
 				{
 					vector<Term*> lterm = ((Fn*)levi)->args();
 					vector<Term*> dterm = ((Fn*)desni)->args();
-					
-					if (lterm.size() == dterm.size())	
+
+					if (lterm.size() == dterm.size())
 					{
 						for (unsigned i = 0; i< lterm.size(); i++)
 						{
 							Equality * ins = new Equality(lterm[i], dterm[i]);
-							desna_strana.push_back(ins);	
+							desna_strana.push_back(ins);
 						}
 
 						desna_strana.erase(desna_strana.begin()+(jednakost-1));
@@ -151,7 +151,7 @@ int main(){
 			break;
 		}
 	}
-			
+
   return 0;
 
 }
@@ -165,12 +165,12 @@ void instantiate_term(Term* term, Term* what, Term* with)
 	if(term->type() == what->type())
 	{
 		if(term->isEqual(what))
-			term = with;
+			term = TermCopy::makeCopy(with);
 
 	}
 	else if (term->type() == 0) // if var or const
 	{
-		term = with;
+		term = TermCopy::makeCopy(with);
 	}
 	else if (term->type() == 1) // if fn
 	{

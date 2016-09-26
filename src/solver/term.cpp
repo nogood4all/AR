@@ -1,28 +1,71 @@
-#include <iostream>
 #include "term.hpp"
 
 using namespace std;
 
+// ---------------
+//TermCopy
+// ---------------
+Term* TermCopy::makeCopy(Term* term)
+{
+  if (term->type() == 0)
+    return new Var((Var*)term);
+
+    return new Fn((Fn*)term);
+}
+
+
+// ---------------
 // Var
+// ---------------
 
-Var::Var(const std::string & name) :  _name{name} {}
+Var::Var(const std::string & name) :  _name{name}
+{}
 
-Term::Type Var::type(void) const {return T_VAR;}
+Var::Var(Var* var)
+{
+  _name = string(var->_name);
+}
 
-const std::string & Var::name(void) const{ return _name; }
+Term::Type Var::type(void) const
+{
+  return T_VAR;
+}
 
-Var & Var::name(const std::string & name) { _name = name; return *this;}
+const std::string & Var::name(void) const
+{
+  return _name;
+}
 
-bool Var::isEqual(Term const * t) const {
+Var & Var::name(const std::string & name)
+{
+   _name = name;
+   return *this;
+}
+
+bool Var::isEqual(Term const * t) const
+{
   return type() == t->type() && ((Var*)t)->_name == _name;
 }
 
 
+
+// ---------------
 // Fn
+// ---------------
 
-Fn::Fn(const std::string & name, std::initializer_list<Term *> args) : _name{name}, _args{args} {}
-Fn::Fn(const std::string & name, std::vector<Term *> & args) : _name{name}, _args{args} {}
+Fn::Fn(const std::string & name, std::initializer_list<Term *> args) : _name{name}, _args{args}
+{}
 
+Fn::Fn(const std::string & name, std::vector<Term *> & args) : _name{name}, _args{args}
+{}
+
+Fn::Fn(Fn* func)
+{
+  _name = string(func->_name);
+
+  for(unsigned i = 0; i < func->arity() ; i++)
+    _args.push_back(TermCopy::makeCopy(func->_args[i]));
+}
 unsigned Fn::arity(void) const {return _args.size(); }
 
 Term::Type Fn::type(void) const {return T_FN; }
@@ -53,11 +96,12 @@ vector<Term*> Fn::args(void)
 Term * makeConst(const std::string & value){ return new Fn(value, {}); }
 Term * makeConst(int value){ return new Fn(to_string(value), {}); }
 
-// ------------
+// ---------------
 
 
-
-
+// ---------------
+//EQUALITY
+// ---------------
 Equality::Equality(Term *_t1, Term *_t2) : t1{_t1}, t2{_t2} {}
 
 bool Equality::isEqual(Equality* eq) const
@@ -72,6 +116,9 @@ bool Equality::isEqual(Equality* eq) const
 }
 
 
+// ---------------
+//FORMULA
+// ---------------
 Formula::Formula(std::vector<Equality*> * eqL, Equality * eq)
   : eqList{eqL}, toProve{eq }
 {}
@@ -86,16 +133,21 @@ bool Formula::findEquality(Equality* eq) const
 
     if(element->isEqual(eq))
       return true;
-    
+
     it++;
   }
 
   return false;
 }
 
-//---------------
 
-std::ostream & operator << (std::ostream & o, Term * t){
+
+//------------------
+// PRINT OPERATORS
+//------------------
+
+std::ostream & operator << (std::ostream & o, Term * t)
+{
   if(t->type() == Term::T_VAR)
     o <<((Var*)t)->name();
   else{
@@ -114,11 +166,13 @@ std::ostream & operator << (std::ostream & o, Term * t){
   return o;
 }
 
-std::ostream & operator << (std::ostream & o, Equality * e){
+std::ostream & operator << (std::ostream & o, Equality * e)
+{
   return o << e->t1 << "=" << e->t2;
 }
 
-std::ostream & operator << (std::ostream & o, Formula * f){
+std::ostream & operator << (std::ostream & o, Formula * f)
+{
   o << '{';
     auto b = f->eqList->cbegin();
     auto e = f->eqList->cend();
