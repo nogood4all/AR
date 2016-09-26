@@ -41,4 +41,3 @@ $(PARSERDIR)/lexer.cpp: $(PARSERDIR)/lexer.lpp
 
 clean:
 	rm -f $(BUILDDIR)/* $(OBJDIR)/* $(SOLVERDIR)/*~ $(PARSERDIR)/lexer.cpp $(PARSERDIR)/parser.cpp $(PARSERDIR)/parser.hpp
-	echo $(OBJECTS_PARSER)
