@@ -2,17 +2,6 @@
 
 using namespace std;
 
-// ---------------
-//TermCopy
-// ---------------
-Term* TermCopy::makeCopy(Term* term)
-{
-  if (term->type() == 0)
-    return new Var((Var*)term);
-
-    return new Fn((Fn*)term);
-}
-
 
 // ---------------
 // Var
@@ -64,7 +53,7 @@ Fn::Fn(Fn* func)
   _name = string(func->_name);
 
   for(unsigned i = 0; i < func->arity() ; i++)
-    _args.push_back(TermCopy::makeCopy(func->_args[i]));
+    _args.push_back(Solver::make_copy(func->_args[i]));
 }
 unsigned Fn::arity(void) const {return _args.size(); }
 
@@ -184,4 +173,221 @@ std::ostream & operator << (std::ostream & o, Formula * f)
     }
   o << "} |- " << f->toProve;
   return o;
+}
+
+
+
+
+//------------------
+// Solver
+//------------------
+void Solver::instantiate_term(Term* term, Term* what, Term* with)
+{
+
+  //Uraditi sa dubokim copy konstruktorima i napraviti duboke copy konstruktore
+  if(term->type() == what->type())
+  {
+    if(term->isEqual(what))
+      term = make_copy(with);
+
+  }
+  else if (term->type() == 0) // if var or const
+  {
+    term = make_copy(with);
+  }
+  else if (term->type() == 1) // if fn
+  {
+    Fn * func = (Fn*) term;
+    vector<Term*> args = func->args();
+    for (unsigned i = 0; i < args.size(); i++)
+    {
+        instantiate_term(args[i], what, with);
+    }
+  }
+
+  return;
+}
+
+Term* Solver::make_copy(Term* term)
+{
+  if (term->type() == 0)
+    return new Var((Var*)term);
+
+    return new Fn((Fn*)term);
+}
+
+void Solver::apply_tran(int eq_num, string arg_term)
+{
+  Term* arg = parseTerm(arg_term.c_str());
+  Equality* eq = _prove_stack[eq_num-1];
+
+  if (!arg)
+    exit(EXIT_FAILURE);
+
+  Equality* eq1 = new Equality(eq->t1, arg);
+  Equality* eq2 = new Equality(arg, eq->t2);
+
+  _prove_stack.erase(_prove_stack.begin()+(eq_num-1));
+  _prove_stack.push_back(eq1);
+  _prove_stack.push_back(eq2);
+}
+
+void Solver::apply_axiom(Formula* f, int eq_num)
+{
+    if (f->findEquality(_prove_stack[eq_num-1]))
+      _prove_stack.erase(_prove_stack.begin()+(eq_num-1));
+}
+
+void Solver::apply_inst(int eq_num, string arg_term, string arg_term2)
+{
+    Term* what = parseTerm(arg_term.c_str());
+    Term* with = parseTerm(arg_term2.c_str());
+
+    if(!with || !what)
+      exit(EXIT_FAILURE);
+
+    Equality* eq = _prove_stack[eq_num-1];
+
+    instantiate_term(eq->t1, what, with);
+    instantiate_term(eq->t2, what, with);
+}
+
+void Solver::apply_refl(int eq_num)
+{
+    Equality* eq = _prove_stack[eq_num-1];
+
+    if (eq->t1->isEqual(eq->t2))
+      _prove_stack.erase(_prove_stack.begin()+(eq_num-1));
+}
+
+void Solver::apply_sym(int eq_num)
+{
+    Equality* eq = _prove_stack[eq_num-1];
+    Term* swap = eq->t1;
+    eq->t1 = eq->t2;
+    eq->t2 = swap;
+
+}
+
+void Solver::apply_cong(int eq_num)
+{
+    Equality* eq = _prove_stack[eq_num-1];
+    Term* left = eq->t1;
+    Term* right = eq->t2;
+
+    if(left->type() == right->type() && right->type() == 1)
+    {
+      vector<Term*> lterm = ((Fn*)left)->args();
+      vector<Term*> dterm = ((Fn*)right)->args();
+
+      if (lterm.size() == dterm.size())
+      {
+        for (unsigned i = 0; i< lterm.size(); i++)
+        {
+          Equality * ins = new Equality(lterm[i], dterm[i]);
+          _prove_stack.push_back(ins);
+        }
+
+        _prove_stack.erase(_prove_stack.begin()+(eq_num-1));
+      }
+    }
+}
+
+
+void Solver::quit()
+{
+    cout << "Exiting..."<< endl;
+    exit(EXIT_SUCCESS);
+}
+
+void Solver::help()
+{
+  string help_menu = ":help\t-\tthis menu\n:q\t-\texit program\n";
+  cout << help_menu << endl;
+}
+
+void Solver::print_status(Formula* f)
+{
+      //PRINT ELEMENATA
+    vector<Equality*>::const_iterator it1= f->eqList->cbegin();
+    vector<Equality*>::const_iterator it2= _prove_stack.cbegin();
+    vector<Equality*>::const_iterator it3= f->eqList->cend();
+    vector<Equality*>::const_iterator it4= _prove_stack.cend();
+
+    for(;it1 < it3 - 1; it1++)
+    {
+      cout << "{" << *it1 << ", ";
+    }
+    cout << *it1 << "}" << " |- ";
+    for(;it2 < it4 - 1; it2++)
+    {
+      cout << *it2 << ", ";
+    }
+    cout << *it2 << endl;
+}
+
+bool Solver::solve (Formula* f)
+{
+  _prove_stack.push_back(f->toProve);
+
+  string line;
+  while(1)
+  {
+    getline(cin, line);
+    string pravilo;
+    string arg_term, arg_term2;
+    stringstream ss(line);
+    int eq_num = 1;
+
+    ss >> pravilo >> eq_num >>  arg_term >> arg_term2;
+    if(!pravilo.compare("tran"))
+    {
+        apply_tran(eq_num, arg_term);
+    }
+    else if(!pravilo.compare("axiom"))
+    {
+        apply_axiom(f, eq_num);
+    }
+    else if(!pravilo.compare("inst"))
+    {
+        apply_inst(eq_num, arg_term, arg_term2);
+    }
+    else if(!pravilo.compare("refl"))
+    {
+        apply_refl(eq_num);
+    }
+    else if(!pravilo.compare("sym"))
+    {
+        apply_sym(eq_num);
+    }
+    else if(!pravilo.compare("cong"))
+    {
+        apply_cong(eq_num);
+    }
+    else if(!pravilo.compare(":q"))
+    {
+        quit();
+    }
+    else if (!pravilo.compare(":help"))
+    {
+        help();
+    }
+    else
+    {
+      cout << "Neposotjece pravilo, probaj ponovo ili ukucaj :help za pomoc" << endl;
+    }
+
+    pravilo.clear();
+    line.clear();
+
+    print_status(f);
+
+    if (!_prove_stack.size())
+    {
+      cout<< "Uspesno reseno" << endl;
+      break;
+    }
+  }
+
+  return true;
 }

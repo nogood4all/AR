@@ -18,7 +18,7 @@ OBJECTS_SOLVER = $(patsubst $(SOLVERDIR)/%.cpp, $(OBJDIR)/%.o, $(SOURCES_SOLVER)
 OBJECTS_PARSER = $(patsubst $(PARSERDIR)/%.cpp, $(OBJDIR)/%.o, $(SOURCES_PARSER))
 
 
-.PHONY: all clean
+.PHONY: all clean run
 
 all: parser $(BUILDDIR)/$(EXECUTABLE)
 
@@ -38,6 +38,9 @@ $(PARSERDIR)/parser.cpp: $(PARSERDIR)/parser.ypp
 
 $(PARSERDIR)/lexer.cpp: $(PARSERDIR)/lexer.lpp
 	$(FLEX) -o $@ $<
+
+run: all
+	./bin/$(EXECUTABLE)
 
 clean:
 	rm -f $(BUILDDIR)/* $(OBJDIR)/* $(SOLVERDIR)/*~ $(PARSERDIR)/lexer.cpp $(PARSERDIR)/parser.cpp $(PARSERDIR)/parser.hpp

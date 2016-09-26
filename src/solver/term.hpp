@@ -5,8 +5,13 @@
 #include <iostream>
 #include <vector>
 #include <iterator>
+#include <string>
+#include <sstream>
+#include <cstdlib>
 
+using namespace std;
 
+//==========================================
 class Term
 {
 public:
@@ -17,13 +22,7 @@ public:
 
 };
 
-class TermCopy
-{
-public:
-  static Term* makeCopy(Term* term);
-};
-
-
+//==========================================
 class Var : public Term
 {
 public:
@@ -40,6 +39,7 @@ private:
     std::string _name;
 };
 
+//==========================================
 class Fn : public Term
 {
 public:
@@ -66,8 +66,7 @@ Term * makeConst(const std::string & value);
 Term * makeConst(int value);
 
 
-
-
+//==========================================
 struct Equality{
   Equality(Term *, Term *);
   Term * t1;
@@ -76,6 +75,7 @@ struct Equality{
   bool isEqual(Equality* eq) const;
 };
 
+//==========================================
 struct Formula{
   Formula(std::vector<Equality*> * eqL, Equality * eq);
   std::vector<Equality*> * eqList;
@@ -84,19 +84,43 @@ struct Formula{
   bool findEquality(Equality* eq) const;
 };
 
+//==========================================
+class Solver
+{
+public:
+  static Term* make_copy(Term* term);
+  bool solve (Formula* f);
+
+private:
+  void apply_tran(int eq_num, string arg_term);
+  void apply_axiom(Formula* f, int eq_num);
+  void apply_inst(int eq_num, string arg_term, string arg_term2);
+  void apply_refl(int eq_num);
+  void apply_sym(int eq_num);
+  void apply_cong(int eq_num);
+
+  void quit();
+  void help();
+  void print_status(Formula* f);
+
+  void instantiate_term(Term*, Term*, Term*);
 
 
+  vector<Equality*> _prove_stack;
+
+};
+
+//==========================================
+
+
+
+//friend functions======================
 std::ostream & operator << (std::ostream & o, Term * t);
 std::ostream & operator << (std::ostream & o, Equality * e);
 std::ostream & operator << (std::ostream & o, Formula * f);
 
-
-
-
-
-
-
-
-
+//extern functions from parser==========
+extern Formula * parseFormula(const char *str_input);
+extern Term * parseTerm(const char *str_input);
 
 #endif
