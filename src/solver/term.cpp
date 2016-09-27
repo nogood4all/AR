@@ -216,6 +216,8 @@ Term* Solver::make_copy(Term* term)
     return new Fn((Fn*)term);
 }
 
+
+
 void Solver::apply_tran(int eq_num, string arg_term)
 {
   Term* arg = parseTerm(arg_term.c_str());
@@ -236,6 +238,8 @@ void Solver::apply_axiom(Formula* f, int eq_num)
 {
     if (f->findEquality(_prove_stack[eq_num-1]))
       _prove_stack.erase(_prove_stack.begin()+(eq_num-1));
+    else 
+      cout << "Nije moguce primeniti pravilo, ne postiji jednakost medju pretpostavkama koja odgovara trazenoj" << endl;
 }
 
 void Solver::apply_inst(int eq_num, string arg_term, string arg_term2)
@@ -258,6 +262,8 @@ void Solver::apply_refl(int eq_num)
 
     if (eq->t1->isEqual(eq->t2))
       _prove_stack.erase(_prove_stack.begin()+(eq_num-1));
+    else 
+      cout << "Nije moguce primeniti pravilo, leva i desna strana jednakosti se razlikuju" << endl;
 }
 
 void Solver::apply_sym(int eq_num)
@@ -274,22 +280,29 @@ void Solver::apply_cong(int eq_num)
     Equality* eq = _prove_stack[eq_num-1];
     Term* left = eq->t1;
     Term* right = eq->t2;
-
+    //cout << ((Fn*)left)->name() << " " << ((Fn*)right)->name() << endl;
     if(left->type() == right->type() && right->type() == 1)
     {
-      vector<Term*> lterm = ((Fn*)left)->args();
-      vector<Term*> dterm = ((Fn*)right)->args();
-
-      if (lterm.size() == dterm.size())
-      {
-        for (unsigned i = 0; i< lterm.size(); i++)
+        if(((Fn*)left)->name() == ((Fn*)right)->name())
         {
-          Equality * ins = new Equality(lterm[i], dterm[i]);
-          _prove_stack.push_back(ins);
-        }
+        vector<Term*> lterm = ((Fn*)left)->args();
+        vector<Term*> dterm = ((Fn*)right)->args();
 
-        _prove_stack.erase(_prove_stack.begin()+(eq_num-1));
-      }
+        if (lterm.size() == dterm.size())
+        {
+            for (unsigned i = 0; i< lterm.size(); i++)
+            {
+            Equality * ins = new Equality(lterm[i], dterm[i]);
+            _prove_stack.push_back(ins);
+            }
+
+          _prove_stack.erase(_prove_stack.begin()+(eq_num-1));
+        }
+        else 
+          cout << "Nije moguce primeniti pravilo, broj promenljivih unutar funkcije se razlikuje" << endl;
+        }
+      else 
+        cout << "Nije moguce primeniti pravilo, funkcije se razlikuju" << endl;
     }
 }
 
