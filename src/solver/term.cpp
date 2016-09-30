@@ -181,32 +181,35 @@ std::ostream & operator << (std::ostream & o, Formula * f)
 //------------------
 // Solver
 //------------------
-void Solver::instantiate_term(Term* term, Term* what, Term* with)
+Term* Solver::instantiate_term(Term* term, Term* what, Term* with)
 {
 
-  //Uraditi sa dubokim copy konstruktorima i napraviti duboke copy konstruktore
-  if(term->type() == what->type())
+  //Popraviti bug oko promene termova unutar funkcije
+  if(term->name() == what->name())
   {
-    if(term->isEqual(what))
-      term = make_copy(with);
-
-  }
-  else if (term->type() == 0) // if var or const
-  {
-    term = make_copy(with);
+    return make_copy(with);
   }
   else if (term->type() == 1) // if fn
   {
     Fn * func = (Fn*) term;
-    vector<Term*> args = func->args();
-    for (unsigned i = 0; i < args.size(); i++)
+    if(func->arity() == 0)
     {
-        instantiate_term(args[i], what, with);
+      return term;
+    }
+    else
+    {
+      vector<Term*> args = func->args();
+      for (unsigned i = 0; i < args.size(); i++)
+      {
+        cout << "for" << endl;
+        args[i] = instantiate_term(args[i], what, with);
+      }
     }
   }
+  return term;
 
-  return;
 }
+
 
 Term* Solver::make_copy(Term* term)
 {
@@ -215,8 +218,6 @@ Term* Solver::make_copy(Term* term)
 
     return new Fn((Fn*)term);
 }
-
-
 
 void Solver::apply_tran(int eq_num, string arg_term)
 {
@@ -252,8 +253,8 @@ void Solver::apply_inst(int eq_num, string arg_term, string arg_term2)
 
     Equality* eq = _prove_stack[eq_num-1];
 
-    instantiate_term(eq->t1, what, with);
-    instantiate_term(eq->t2, what, with);
+    eq->t1 = instantiate_term(eq->t1, what, with);
+    eq->t2 = instantiate_term(eq->t2, what, with);
 }
 
 void Solver::apply_refl(int eq_num)
@@ -292,8 +293,8 @@ void Solver::apply_cong(int eq_num)
         {
             for (unsigned i = 0; i< lterm.size(); i++)
             {
-            Equality * ins = new Equality(lterm[i], dterm[i]);
-            _prove_stack.push_back(ins);
+              Equality * ins = new Equality(lterm[i], dterm[i]);
+              _prove_stack.push_back(ins);
             }
 
           _prove_stack.erase(_prove_stack.begin()+(eq_num-1));

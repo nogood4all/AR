@@ -19,6 +19,7 @@ public:
   enum Type {T_VAR = 0, T_FN = 1};
   virtual Type type(void) const = 0 ;
   virtual bool isEqual(Term const * t) const = 0 ;
+  virtual const std::string & name(void) const = 0;
 
 };
 
@@ -30,7 +31,7 @@ public:
   Var(Var* var);
 
   Type type(void) const override;
-  const std::string & name(void) const;
+  const std::string & name(void) const override;
   Var & name(const std::string & name);
 
   bool isEqual(Term const * t) const override;
@@ -48,7 +49,7 @@ public:
   Fn(Fn*);
 
   Type type(void) const override;
-  const std::string & name(void) const;
+  const std::string & name(void) const override;
   Fn & name(const std::string & name);
   std::vector<Term*> args(void);
 
@@ -103,7 +104,7 @@ private:
   void help();
   void print_status(Formula* f);
 
-  void instantiate_term(Term*, Term*, Term*);
+  Term* instantiate_term(Term*, Term*, Term*);
 
 
   vector<Equality*> _prove_stack;
